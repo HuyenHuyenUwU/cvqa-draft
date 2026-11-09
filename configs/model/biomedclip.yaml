@@ -1,0 +1,6 @@
+model_id: "hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"
+local_dir: null                     # path to a local copy; REQUIRED unless allow_download is true
+allow_download: false               # explicit approval needed to fetch weights
+context_length: 256
+freeze: true
+unfreeze_last_n_blocks: 0

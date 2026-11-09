@@ -1,0 +1,37 @@
+includes:
+  data: data/fracatlas.yaml         # swap for data/btxrd.yaml
+  biomedclip: model/biomedclip.yaml
+  text_encoder: model/text_encoder.yaml
+  llm: model/llm.yaml
+  fusion: model/fusion.yaml
+  localization: model/localization.yaml
+model_source: pretrained            # pretrained | tiny_random (tests only)
+preprocess:
+  image_size: 224
+  mean: [0.48145466, 0.4578275, 0.40821073]
+  std: [0.26862954, 0.26130258, 0.27577711]
+  window_percentiles: [0.5, 99.5]
+seed: 42
+deterministic: false
+device: auto
+log_level: INFO
+train:
+  epochs: 5
+  batch_size: 2
+  grad_accum_steps: 8
+  lr: 1.0e-4
+  lr_encoder: 1.0e-5
+  weight_decay: 0.01
+  warmup_steps: 50
+  grad_clip: 1.0
+  amp: true                         # CUDA only
+  num_workers: 2
+  use_gt_roi: true
+  min_loc_steps: 50                 # localizer counts as 'trained' after this many supervised steps
+  early_stopping_patience: 2
+  log_every: 20
+losses:
+  weights: {ans: 1.0, loc: 0.5, rat: 0.0, kg: 0.0, align: 0.0}   # rat/kg/align are skipped placeholders
+  heatmap_bce: true
+generation: {max_new_tokens: 32, do_sample: false, temperature: 1.0, top_p: 1.0}
+output: {output_dir: outputs/exp01, checkpoint_dir: checkpoints/exp01, log_dir: logs}

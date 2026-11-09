@@ -1,0 +1,2 @@
+enabled: true                       # LobA-style grounding branch (box supervision only)
+hidden: 256
