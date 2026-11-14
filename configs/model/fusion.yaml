@@ -1,8 +1,0 @@
-d_model: 256
-n_layers: 2
-n_heads: 4
-dropout: 0.1
-use_patch_tokens: false
-n_soft_tokens: 8
-adapter_heads: 4
-knowledge_dim: null                 # set when a real knowledge embedding exists

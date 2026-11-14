@@ -1,4 +1,0 @@
-# Language encoder = BiomedCLIP's own text tower (PubMedBERT-initialised); no separate checkpoint needed.
-backend: biomedclip
-max_length: 256
-freeze: true

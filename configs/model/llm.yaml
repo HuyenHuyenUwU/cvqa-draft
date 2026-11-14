@@ -1,9 +1,0 @@
-model_id: Qwen/Qwen2.5-1.5B-Instruct   # Apache-2.0 per model card (re-check before redistributing)
-local_dir: null
-allow_download: false
-dtype: float32                      # float16/bfloat16 on GPU
-device_map: null                    # e.g. "auto" (needs accelerate)
-load_in_4bit: false                 # needs bitsandbytes + CUDA
-freeze: true
-max_prompt_tokens: 256
-max_answer_tokens: 64

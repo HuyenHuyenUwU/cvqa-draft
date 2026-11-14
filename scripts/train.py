@@ -1,30 +1,16 @@
-"""Offline training:  python scripts/train.py --config configs/offline.yaml [--set train.epochs=3 ...]"""
+"""OFFLINE train:  python scripts/train.py [--configs base,data,model,training] [--set train.epochs=3 data.datasets.fracatlas.root=/path]"""
 import argparse
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.common.config import deep_merge, load_config  # noqa: E402
-from src.offline.pipeline import OfflinePipeline  # noqa: E402
-
-
-def parse_overrides(items):
-    out = {}
-    for it in items or []:
-        k, v = it.split("=", 1)
-        d = out
-        *path, last = k.split(".")
-        for p in path:
-            d = d.setdefault(p, {})
-        import yaml
-        d[last] = yaml.safe_load(v)
-    return out
-
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from bone_cvqa.commons.config import load_config, parse_overrides  # noqa: E402
+from bone_cvqa.training.pipeline import OfflinePipeline  # noqa: E402
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="configs/offline.yaml")
-    ap.add_argument("--set", nargs="*", help="dotted overrides, e.g. data.root=/path train.epochs=2")
-    a = ap.parse_args()
-    cfg = load_config(a.config, parse_overrides(a.set))
-    print(OfflinePipeline(cfg).train())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--configs", default="base,data,model,training")
+    parser.add_argument("--set", nargs="*", default=[])
+    args = parser.parse_args()
+    summary = OfflinePipeline(load_config(args.configs.split(","), overrides=parse_overrides(args.set))).train()
+    print({k: summary[k] for k in ("best_val_loss", "active_losses")})

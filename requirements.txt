@@ -1,14 +1,10 @@
 torch>=2.2
+torchvision
 transformers>=4.45
-open_clip_torch>=2.26
-timm>=1.0
 pydicom>=2.4
 pillow
 opencv-python-headless
 numpy
 pyyaml
 pytest
-fastapi>=0.115
-uvicorn[standard]>=0.30
-python-multipart>=0.0.9
-# optional: accelerate (device_map), bitsandbytes (4-bit, CUDA), pylibjpeg (compressed DICOM)
+# tuỳ chọn (ablation BiomedCLIP): open_clip_torch, timm

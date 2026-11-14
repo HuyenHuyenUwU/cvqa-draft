@@ -1,0 +1,16 @@
+# ONLINE: tắt gradient, không tính loss, không cập nhật tham số.
+inference:
+  checkpoint: checkpoints/exp01/best.pt
+  generation: {max_new_tokens: 32, do_sample: false, temperature: 1.0, top_p: 1.0}
+  block_on_invalid_quality: false    # false = chất lượng ảnh chỉ đưa vào Warning Generator (đúng sơ đồ)
+  image_quality:                     # heuristic chưa tinh chỉnh, KHÔNG phải đánh giá lâm sàng
+    min_std: 0.02
+    min_contrast: 0.15
+    min_mean: 0.05
+    max_mean: 0.92
+    max_saturated_fraction: 0.5
+    min_sharpness: 20.0
+    max_noise_sigma: 0.1
+    min_side_px: 128
+  scope: {unmatched_policy: out_of_scope, keywords: null}
+  warnings: {confidence_threshold: 0.5}

@@ -7,28 +7,28 @@ import pytest
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
 
-def make_fake_fracatlas(root: Path, n_frac=6, n_non=6, size=(96, 128)):
-    """Synthetic data in the ASSUMED FracAtlas layout (no real patient data)."""
+def make_fake_fracatlas(root: Path, n_fractured=6, n_normal=6, size=(96, 128)):
+    """Dữ liệu tổng hợp theo layout FracAtlas GIẢ ĐỊNH (không phải dữ liệu bệnh nhân thật)."""
     rng = np.random.default_rng(0)
-    imgs, anns = [], []
-    iid = 0
-    for sub, n in (("Fractured", n_frac), ("Non_fractured", n_non)):
-        d = root / "images" / sub
-        d.mkdir(parents=True, exist_ok=True)
-        for k in range(n):
-            arr = (rng.random((size[1], size[0])) * 200 + 20).astype(np.uint8)
-            name = f"IMG{iid:04d}.jpg"
-            Image.fromarray(arr).save(d / name)
-            imgs.append({"id": iid, "file_name": name, "width": size[0], "height": size[1]})
+    images, annotations, index = [], [], 0
+    for sub, count in (("Fractured", n_fractured), ("Non_fractured", n_normal)):
+        folder = root / "images" / sub
+        folder.mkdir(parents=True, exist_ok=True)
+        for _ in range(count):
+            array = (rng.random((size[1], size[0])) * 200 + 20).astype(np.uint8)
+            name = f"IMG{index:04d}.jpg"
+            Image.fromarray(array).save(folder / name)
+            images.append({"id": index, "file_name": name, "width": size[0], "height": size[1]})
             if sub == "Fractured":
-                anns.append({"id": iid, "image_id": iid, "bbox": [10, 20, 40, 30]})
-            iid += 1
-    ann_dir = root / "Annotations" / "COCO JSON"
-    ann_dir.mkdir(parents=True, exist_ok=True)
-    (ann_dir / "COCO_fracture_masks.json").write_text(json.dumps({"images": imgs, "annotations": anns}))
+                annotations.append({"id": index, "image_id": index, "bbox": [10, 20, 40, 30]})
+            index += 1
+    annotation_dir = root / "Annotations" / "COCO JSON"
+    annotation_dir.mkdir(parents=True, exist_ok=True)
+    (annotation_dir / "COCO_fracture_masks.json").write_text(json.dumps({"images": images, "annotations": annotations}))
     return root
 
 
@@ -38,31 +38,21 @@ def fake_fracatlas(tmp_path):
 
 
 @pytest.fixture()
-def data_cfg(fake_fracatlas):
-    return {"name": "fracatlas", "root": str(fake_fracatlas),
-            "split": {"ratios": [0.5, 0.25, 0.25], "seed": 1}, "qa": {"source": "weak_template"}}
-
-
-def tiny_cfg(**over):
-    cfg = {
-        "model_source": "tiny_random",
-        "preprocess": {"image_size": 64},
-        "biomedclip": {"freeze": True}, "text_encoder": {"max_length": 96, "freeze": True},
-        "llm": {"freeze": True, "max_prompt_tokens": 96, "max_answer_tokens": 16},
-        "fusion": {"d_model": 32, "n_layers": 1, "n_heads": 2, "n_soft_tokens": 4, "adapter_heads": 2, "dropout": 0.0},
-        "localization": {"enabled": True, "hidden": 32},
-        "generation": {"max_new_tokens": 6, "do_sample": False},
-    }
-    cfg.update(over)
-    return cfg
+def xray_path(tmp_path):
+    rng = np.random.default_rng(1)
+    base = np.linspace(30, 220, 160)[None, :].repeat(160, 0) + rng.normal(0, 25, (160, 160))
+    path = tmp_path / "xray.png"
+    Image.fromarray(np.clip(base, 0, 255).astype(np.uint8)).save(path)
+    return str(path)
 
 
 @pytest.fixture(scope="session")
-def tiny_model_cfg():
-    return tiny_cfg()
+def tiny_cfg():
+    from tests.helpers import tiny_config  # noqa
+    return tiny_config()
 
 
-@pytest.fixture()
-def tiny_model(tiny_model_cfg):
-    from src.models.model_io import build_cvqa_model
-    return build_cvqa_model(tiny_model_cfg)
+@pytest.fixture(scope="session")
+def tiny_system(tiny_cfg):
+    from bone_cvqa.system import build_system
+    return build_system(tiny_cfg)

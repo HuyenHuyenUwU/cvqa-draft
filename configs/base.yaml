@@ -1,0 +1,8 @@
+# Cấu hình chung cho mọi chế độ.
+seed: 42
+device: auto                 # auto | cpu | cuda
+log_level: INFO
+paths:
+  output_dir: outputs/exp01
+  checkpoint_dir: checkpoints/exp01
+  log_dir: logs

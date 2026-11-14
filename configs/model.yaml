@@ -1,0 +1,41 @@
+# Thay công nghệ (ablation) bằng cách đổi provider/name ở external_models; code không đổi.
+# provider: vision_encoder = torchvision(resnet50) | open_clip/huggingface(BiomedCLIP) | tiny_random
+#           question_encoder = huggingface(BERT) | pubmedbert | tiny_random
+#           medical_llm = huggingface | local | medgemma | tiny_random
+d_model: 256
+external_models:
+  vision_encoder:
+    provider: torchvision
+    name: resnet50
+    device: auto
+    enabled: true
+    trainable: false           # đóng băng; chỉ train projection/fusion
+    pretrained: false          # true cần allow_download: true
+    weights_path: null
+    allow_download: false
+  question_encoder:
+    provider: huggingface
+    name: bert-base-uncased
+    local_dir: null
+    allow_download: false
+    max_length: 128
+    device: auto
+    enabled: true
+    trainable: false
+  medical_llm:
+    provider: huggingface
+    name: Qwen/Qwen2.5-0.5B-Instruct
+    local_dir: null
+    allow_download: false
+    dtype: float32
+    device: auto
+    enabled: true
+    trainable: false
+image_processing:
+  preprocess: {image_size: 224, mean: [0.485, 0.456, 0.406], std: [0.229, 0.224, 0.225],
+               window_mode: percentile, window_percentiles: [0.5, 99.5]}
+  global_pooling: backbone     # backbone | mean
+question_processing: {}
+ontology_processing: {index_path: null}      # placeholder: chưa có index
+cross_modal_fusion: {n_layers: 2, n_heads: 4, dropout: 0.1}
+decoder: {max_prompt_tokens: 192, max_answer_tokens: 48}

@@ -1,0 +1,22 @@
+# Dữ liệu: FracAtlas / BTXRD. KHÔNG tự tải dữ liệu; đặt root tới bản local.
+data:
+  name: fracatlas              # fracatlas | btxrd
+  split: {ratios: [0.7, 0.15, 0.15], seed: 42, official_split_file: null}   # chia theo bệnh nhân nếu có patient_id
+  qa:
+    source: weak_template      # weak_template = câu hỏi-đáp SINH từ nhãn (KHÔNG phải ground truth chuyên gia) | file = JSONL chuyên gia
+    file: null
+  datasets:
+    fracatlas:                 # layout GIẢ ĐỊNH theo tài liệu công khai, kiểm tra bằng scripts/inspect_dataset (xem README)
+      root: /path/to/FracAtlas
+      images_dir: images
+      label_dirs: {Fractured: 1, Non_fractured: 0}
+      coco_json: "Annotations/COCO JSON/COCO_fracture_masks.json"
+      image_exts: [.jpg, .jpeg, .png, .dcm]
+    btxrd:                     # schema CHƯA biết: điền cột sau khi inspect dữ liệu thật
+      root: /path/to/BTXRD
+      images_dir: images
+      metadata_csv: dataset.csv
+      annotation_dir: Annotations
+      columns: {image_id: image_id, label: label, patient_id: null}
+      label_names: {}
+      image_exts: [.jpg, .jpeg, .png, .dcm]
