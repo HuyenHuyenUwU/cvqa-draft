@@ -172,6 +172,7 @@ Provider có sẵn:
 Bám sát diagram: `image_processing/`, `question_processing/`, `ontology_processing/`, `cross_modal_fusion/`, `answer_generation/`, `uncertainty_estimation/` (Online), `trustworthy_verification/` (Online), `training/` (Offline), `inference/` (Online).
 
 Chi tiết: `docs/`.
+Notebook chạy trên Kaggle: [notebooks/kaggle_cvqa_workflow.ipynb](notebooks/kaggle_cvqa_workflow.ipynb).
 
 Bổ sung ngoài cây bạn đưa ra: `data/`, `evaluation/`, `external_models/` đặt ở cấp package, `checkpoint_io.py` dùng chung (để Online không import `training`).
 
