@@ -1,4 +1,9 @@
-"""OFFLINE train:  python scripts/train.py [--configs base,data,model,training] [--set train.epochs=3 data.datasets.fracatlas.root=/path]"""
+"""Offline training.
+
+Examples:
+    python scripts/train.py --set train.epochs=3 device=cpu
+    python scripts/train.py --configs base,data,model,training --set train.lr=5e-5
+"""
 import argparse
 import sys
 from pathlib import Path

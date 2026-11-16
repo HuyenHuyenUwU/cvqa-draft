@@ -4,7 +4,8 @@ Baseline "basic nhất" để **test từng thành phần** của pipeline (lu�
 
 - Vision: **ResNet50** · Question: **BERT** · Fusion: **cross-attention** · Decoder: **LLM mã nguồn mở** (mặc định Qwen2.5-0.5B-Instruct)
 - Placeholder (log `[TODO]`): lesion localization, ontology, entity linking, uncertainty/confidence, heatmap/evidence graph/explanation
-- Dataset: FracAtlas, BTXRD (tiền xử lý cơ bản) · Metric: exact match, token F1, ROUGE-L, yes/no accuracy
+- Dataset: FracAtlas, BTXRD (tiền xử lý cơ bản)
+- Metric: exact match, token F1, ROUGE-L, yes/no accuracy
 - Không có xAI, không dùng API trả phí, không tự tải model/dataset.
 
 ## Flow
@@ -24,7 +25,10 @@ flowchart TD
     end
     EV[evaluation/] -->|INFER| S2
 ```
-Entry points: `scripts/train.py` → `training.pipeline.OfflinePipeline`; `scripts/infer.py` → `inference.run` → `InferenceEngine` → `OnlinePipeline`; `scripts/evaluate.py` → `evaluation.evaluator`.
+Entry points:
+- `scripts/train.py` → `training.pipeline.OfflinePipeline`;
+- `scripts/infer.py` → `inference.run` → `InferenceEngine` → `OnlinePipeline`;
+- `scripts/evaluate.py` → `evaluation.evaluator`
 
 ## Cài đặt
 ```bash
@@ -36,17 +40,109 @@ pip install -r requirements.txt && pip install -e .
 # End-to-end trên dữ liệu tổng hợp + model nhỏ ngẫu nhiên (CPU, không tải gì; chỉ kiểm tra đường ống)
 python scripts/run_end2end.py --workdir outputs/end2end
 
-# Train (Offline) — sửa đường dẫn dataset trong configs/data.yaml hoặc --set
-python scripts/train.py --set data.datasets.fracatlas.root=/path/FracAtlas train.epochs=5
+# Quy tắc override:
+#   --configs base,data,model,training
+#   --set key.nested=value key2=value
+# Giá trị được đọc theo YAML: true/false, null, số, chuỗi, list và object đều dùng được.
 
-# Evaluate
-python scripts/evaluate.py --checkpoint checkpoints/exp01/best.pt --split test
+# Train (Offline) — chỉnh dataset, device, số epoch và batch size từ terminal
+python scripts/train.py `
+  --configs base,data,model,training `
+  --set `
+    data.datasets.fracatlas.root=D:\data\FracAtlas `
+    device=cuda `
+    train.epochs=5 `
+    train.batch_size=2 `
+    train.lr=1e-4 `
+    train.amp=true
 
-# Inference (Online)
-python scripts/infer.py --checkpoint checkpoints/exp01/best.pt --image xray.png --question "Is there a fracture?"
+# Train nhanh để debug
+python scripts/train.py `
+  --set `
+    device=cpu `
+    train.epochs=1 `
+    train.max_train_batches=5 `
+    train.max_val_batches=2 `
+    train.num_workers=0 `
+    train.amp=false
+
+# Evaluate — chỉnh split, device, output và generation từ terminal
+python scripts/evaluate.py `
+  --configs base,data,model,training,inference `
+  --checkpoint checkpoints/exp01/best.pt `
+  --split test `
+  --set `
+    device=cpu `
+    paths.output_dir=outputs/eval_exp01 `
+    inference.generation.max_new_tokens=64 `
+    inference.generation.do_sample=false
+
+# Evaluate validation split với giới hạn số batch
+python scripts/evaluate.py `
+  --checkpoint checkpoints/exp01/best.pt `
+  --split val `
+  --set `
+    evaluation.max_batches=10 `
+    device=cpu
+
+# Inference (Online) — chỉnh generation, device, scope và image quality từ terminal
+python scripts/infer.py `
+  --configs base,model,inference `
+  --checkpoint checkpoints/exp01/best.pt `
+  --image xray.png `
+  --question "Is there a fracture?" `
+  --set `
+    device=cpu `
+    inference.generation.max_new_tokens=48 `
+    inference.generation.temperature=0.7 `
+    inference.generation.do_sample=false `
+    inference.scope.unmatched_policy=in_scope
+
+# Inference có history và ghi JSON
+python scripts/infer.py `
+  --checkpoint checkpoints/exp01/best.pt `
+  --image xray.png `
+  --question "Where is the fracture?" `
+  --history history.json `
+  --sample-id sample_001 `
+  --out outputs/result.json `
+  --set `
+    inference.generation.max_new_tokens=32 `
+    inference.block_on_invalid_quality=true
+
+# Chỉ đổi file cấu hình được merge (không cần sửa code)
+python scripts/infer.py `
+  --configs base,model,inference `
+  --checkpoint checkpoints/exp01/best.pt `
+  --image xray.png `
+  --question "Is there a fracture?" `
+  --set `
+    external_models.medical_llm.device=cuda `
+    inference.image_quality.min_side_px=256
 
 # Test
 pytest -q
+```
+
+### Các thông số thường chỉnh bằng `--set`
+
+| Nhóm | Ví dụ |
+|---|---|
+| Runtime | `device=cpu`, `seed=123`, `log_level=DEBUG` |
+| Dataset | `data.datasets.fracatlas.root=D:\data\FracAtlas` |
+| Training | `train.epochs=10`, `train.batch_size=4`, `train.lr=5e-5` |
+| Training debug | `train.max_train_batches=5`, `train.max_val_batches=2`, `train.num_workers=0` |
+| Loss | `loss_weights.answer=1.0`, `loss_weights.localization=0.5` |
+| Generation | `inference.generation.max_new_tokens=64`, `inference.generation.temperature=0.7` |
+| Online policy | `inference.block_on_invalid_quality=true`, `inference.scope.unmatched_policy=in_scope` |
+| Quality threshold | `inference.image_quality.min_side_px=256` |
+| Output | `paths.output_dir=outputs/exp02`, `paths.checkpoint_dir=checkpoints/exp02` |
+
+PowerShell dùng dấu backtick `` ` `` để xuống dòng. Nếu chạy trên một dòng,
+viết các override liên tiếp sau `--set`, ví dụ:
+
+```powershell
+python scripts\train.py --set device=cpu train.epochs=1 train.batch_size=2
 ```
 
 ## Mỗi module chạy độc lập
@@ -66,10 +162,17 @@ external_models:
   question_encoder: {provider: huggingface,  name: bert-base-uncased,        device: cuda, enabled: true}
   medical_llm:      {provider: huggingface,  name: Qwen/Qwen2.5-0.5B-Instruct, device: cuda, enabled: true}
 ```
-Provider có sẵn: vision `torchvision|open_clip|huggingface|tiny_random`; text `huggingface|pubmedbert|tiny_random`; llm `huggingface|local|medgemma|tiny_random` (`llava_med`, `api` là placeholder). Thêm model mới: kế thừa `BaseModelAdapter` (`load/predict/unload`) và `@register_adapter(role, provider)`.
+Provider có sẵn:
+- vision `torchvision|open_clip|huggingface|tiny_random`
+- text `huggingface|pubmedbert|tiny_random`
+- llm `huggingface|local|medgemma|tiny_random` (`llava_med`, `api` là placeholder).
+- Thêm model mới: kế thừa `BaseModelAdapter` (`load/predict/unload`) và `@register_adapter(role, provider)`.
 
 ## Cấu trúc
-Bám sát diagram: `image_processing/`, `question_processing/`, `ontology_processing/`, `cross_modal_fusion/`, `answer_generation/`, `uncertainty_estimation/` (Online), `trustworthy_verification/` (Online), `training/` (Offline), `inference/` (Online). Chi tiết: `docs/`.
+Bám sát diagram: `image_processing/`, `question_processing/`, `ontology_processing/`, `cross_modal_fusion/`, `answer_generation/`, `uncertainty_estimation/` (Online), `trustworthy_verification/` (Online), `training/` (Offline), `inference/` (Online).
+
+Chi tiết: `docs/`.
+
 Bổ sung ngoài cây bạn đưa ra: `data/`, `evaluation/`, `external_models/` đặt ở cấp package, `checkpoint_io.py` dùng chung (để Online không import `training`).
 
 ## Trạng thái kiểm chứng & hạn chế

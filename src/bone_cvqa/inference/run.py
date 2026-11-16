@@ -1,5 +1,11 @@
-"""Chạy Online một mẫu:
-    python -m bone_cvqa.inference.run --checkpoint checkpoints/exp01/best.pt --image xray.png --question "Is there a fracture?"
+"""Chạy Online một mẫu.
+
+Ví dụ:
+    python -m bone_cvqa.inference.run --checkpoint checkpoints/exp01/best.pt \
+        --image xray.png --question "Is there a fracture?"
+    python -m bone_cvqa.inference.run --checkpoint checkpoints/exp01/best.pt \
+        --image xray.png --question "Is there a fracture?" \
+        --set device=cpu inference.generation.max_new_tokens=48
 """
 import json
 from pathlib import Path

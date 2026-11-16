@@ -1,5 +1,10 @@
-"""Đánh giá trên split cố định (chế độ INFER):
-    python scripts/evaluate.py --checkpoint checkpoints/exp01/best.pt --split test [--set ...]"""
+"""Đánh giá trên một split cố định (chế độ INFER).
+
+Ví dụ:
+    python scripts/evaluate.py --checkpoint checkpoints/exp01/best.pt --split test
+    python scripts/evaluate.py --checkpoint checkpoints/exp01/best.pt \
+        --set device=cpu inference.generation.max_new_tokens=64
+"""
 import argparse
 import json
 import sys
@@ -25,5 +30,6 @@ if __name__ == "__main__":
     system, _ = load_system_from_checkpoint(args.checkpoint, {"external_models": config["external_models"]})
     loader = make_dataloader(config, args.split, False, str(Path(config["paths"]["output_dir"]) / "split_metadata.json"))
     result = evaluate(system, loader, resolve_device(config["device"]), config["inference"]["generation"],
-                      config["paths"]["output_dir"], args.split)
+                      config["paths"]["output_dir"], args.split,
+                      config.get("evaluation", {}).get("max_batches"))
     print(json.dumps(result, indent=2, ensure_ascii=False))
